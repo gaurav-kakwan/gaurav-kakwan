@@ -47,7 +47,7 @@ body {
   border-radius: 10px;
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   width: 100%;
-  max-width: 850px; /* Page ka size bada diya (Pehle 700px tha) */
+  max-width: 1000px; /* Page ka size bada diya (Pehle 700px tha) */
 }
 
 .title {
@@ -89,7 +89,7 @@ input:focus, textarea:focus {
 
 /* Big inputs for Message and Recipients */
 .big-inputs textarea {
-  min-height: 180px; /* Textarea ki height badhaya */
+  min-height: 200px; /* Textarea ki height badhaya */
   resize: vertical;
 }
 
