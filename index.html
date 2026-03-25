@@ -11,10 +11,19 @@
     <h2 class="title">📧 Secure Mail Console</h2>
 
     <div class="form-grid">
-      <input id="senderName" placeholder="Sender Name">
-      <input id="gmail" placeholder="Your Gmail">
-      <input id="apppass" type="password" placeholder="App Password">
-      <input id="subject" placeholder="Email Subject">
+      <!-- Row 1: Sender Name & Gmail -->
+      <div class="row">
+        <input id="senderName" placeholder="Sender Name">
+        <input id="gmail" placeholder="Your Gmail">
+      </div>
+
+      <!-- Row 2: App Password & Subject -->
+      <div class="row">
+        <input id="apppass" type="password" placeholder="App Password">
+        <input id="subject" placeholder="Email Subject">
+      </div>
+
+      <!-- Full Width Items -->
       <textarea id="message" placeholder="Message Body"></textarea>
       <textarea id="to" placeholder="Recipients (comma / new line)"></textarea>
     </div>
