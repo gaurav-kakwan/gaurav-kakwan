@@ -1,99 +1,113 @@
 const express = require('express');
 const nodemailer = require('nodemailer');
 const path = require('path');
+const dns = require("dns");
+
+dns.setServers(["8.8.8.8","8.8.4.4"]);
+
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
-// --- SINGLE LOGIN LOGIC ---
-let isOccupied = false; 
+let isOccupied = false;
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'login.html'));
+app.get('/', (req,res)=>{
+res.sendFile(path.join(__dirname,'login.html'));
 });
 
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-    if (username === "gaurav" && password === "kakwan") {
-        if (isOccupied) {
-            return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
-        }
-        isOccupied = true;
-        return res.json({ success: true });
-    } else {
-        return res.json({ success: false, msg: "Invalid Username or Password" });
-    }
+app.post('/login',(req,res)=>{
+
+const {username,password}=req.body;
+
+if(username==="gaurav" && password==="kakwan"){
+
+if(isOccupied){
+return res.json({success:false,msg:"User Limit Reached"});
+}
+
+isOccupied=true;
+return res.json({success:true});
+
+}
+
+return res.json({success:false,msg:"Invalid Login"});
 });
 
-app.post('/logout', (req, res) => {
-    isOccupied = false;
-    res.json({ success: true });
+app.post('/logout',(req,res)=>{
+isOccupied=false;
+res.json({success:true});
 });
 
-// Email Send API - IPv4 FIX APPLIED
-app.post('/send', async (req, res) => {
-    const { senderName, gmail, apppass, subject, message, to } = req.body;
+app.post('/send', async (req,res)=>{
 
-    if (!gmail || !apppass || !to) {
-        return res.json({ success: false, msg: "Please fill all required fields." });
-    }
+const {senderName,gmail,apppass,subject,message,to} = req.body;
 
-    const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
+if(!gmail || !apppass || !to){
+return res.json({success:false,msg:"Missing fields"});
+}
 
-    if (recipients.length > 25) {
-        return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
-    }
+const recipients = to
+.split(/[\n,]/)
+.map(e=>e.trim())
+.filter(e=>e);
 
-    // FIX: Added 'family: 4' to force IPv4 (Gmail sometimes fails on IPv6 in cloud)
-    const transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 587,
-        secure: false,
-        requireTLS: true,
-        auth: {
-            user: gmail,
-            pass: apppass
-        },
-        connectionTimeout: 10000,
-        socketTimeout: 10000,
-        tls: {
-            ciphers: 'SSLv3' // Extra compatibility
-        },
-        // YE LINE FIX HAI: IPv4 ko force karta hai
-        family: 4 
-    });
+if(recipients.length > 25){
+return res.json({success:false,msg:"Max 25 recipients allowed"});
+}
 
-    const mailOptions = {
-        from: `"${senderName}" <${gmail}>`,
-        to: recipients,
-        subject: subject,
-        text: message
-    };
+try{
 
-    try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent: ' + info.response);
-        res.json({ success: true, sent: recipients.length });
-    } catch (error) {
-        console.error("Error Details:", error);
-        
-        // Specific Error Handling
-        if(error.code === 'ESOCKET') {
-            return res.json({ success: false, msg: "Network Error: Render might be blocking SMTP. Try using Brevo API." });
-        }
-        if(error.code === 'EAUTH') {
-            return res.json({ success: false, msg: "Invalid Gmail or App Password." });
-        }
-        if(error.code === 'ETIMEDOUT') {
-             return res.json({ success: false, msg: "Connection Timeout: Server cannot reach Gmail." });
-        }
-        
-        res.json({ success: false, msg: `Error: ${error.message}` });
-    }
+const transporter = nodemailer.createTransport({
+
+host:"smtp.gmail.com",
+port:587,
+secure:false,
+requireTLS:true,
+
+auth:{
+user:gmail,
+pass:apppass
+},
+
+connectionTimeout:30000,
+greetingTimeout:30000,
+socketTimeout:30000
+
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
+let sent=0;
+
+for(const email of recipients){
+
+await transporter.sendMail({
+
+from:`"${senderName}" <${gmail}>`,
+to:email,
+subject:subject,
+text:message
+
+});
+
+sent++;
+
+await new Promise(r=>setTimeout(r,2000));
+
+}
+
+res.json({success:true,sent:sent});
+
+}catch(error){
+
+console.log("MAIL ERROR:",error);
+
+res.json({success:false,msg:error.message});
+
+}
+
+});
+
+app.listen(port,()=>{
+console.log("Server running on port "+port);
 });
