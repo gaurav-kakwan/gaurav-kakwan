@@ -1,7 +1,7 @@
 {
   "name": "secure-mail-console",
   "version": "1.0.0",
-  "description": "Secure Gmail API Mail Sender",
+  "description": "Gmail API Mailer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
