@@ -32,7 +32,7 @@ app.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// Email Send API - Updated for Port 587
+// Email Send API - IPv4 FIX APPLIED
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -46,19 +46,23 @@ app.post('/send', async (req, res) => {
         return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
     }
 
-    // CHANGE: Using Port 587 and Secure: false (STARTTLS)
-    // Ye cloud hosting par zyada reliable hota hai
+    // FIX: Added 'family: 4' to force IPv4 (Gmail sometimes fails on IPv6 in cloud)
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
         port: 587,
-        secure: false, // false for 587
+        secure: false,
         requireTLS: true,
         auth: {
             user: gmail,
             pass: apppass
         },
-        connectionTimeout: 20000, // 20 seconds wait
-        socketTimeout: 20000
+        connectionTimeout: 10000,
+        socketTimeout: 10000,
+        tls: {
+            ciphers: 'SSLv3' // Extra compatibility
+        },
+        // YE LINE FIX HAI: IPv4 ko force karta hai
+        family: 4 
     });
 
     const mailOptions = {
@@ -75,12 +79,15 @@ app.post('/send', async (req, res) => {
     } catch (error) {
         console.error("Error Details:", error);
         
-        // Specific error messages
+        // Specific Error Handling
         if(error.code === 'ESOCKET') {
-            return res.json({ success: false, msg: "Network Error: Server cannot connect to Gmail." });
+            return res.json({ success: false, msg: "Network Error: Render might be blocking SMTP. Try using Brevo API." });
         }
         if(error.code === 'EAUTH') {
             return res.json({ success: false, msg: "Invalid Gmail or App Password." });
+        }
+        if(error.code === 'ETIMEDOUT') {
+             return res.json({ success: false, msg: "Connection Timeout: Server cannot reach Gmail." });
         }
         
         res.json({ success: false, msg: `Error: ${error.message}` });
