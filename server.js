@@ -2,40 +2,58 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const app = express();
-
-// Render automatically PORT deta hai, agar nahi mila toh 3000 use karo
 const port = process.env.PORT || 3000;
 
-// Middleware to parse JSON data
 app.use(express.json());
-
-// Serve static files (HTML, CSS, JS)
 app.use(express.static(__dirname));
 
-// Default route: Login page
+// --- SINGLE LOGIN LOGIC ---
+let isOccupied = false; 
+
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// API to send email
+// Login API
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    // Check credentials
+    if (username === "gaurav" && password === "kakwan") {
+        if (isOccupied) {
+            return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
+        }
+        isOccupied = true; // Lock the seat
+        return res.json({ success: true });
+    } else {
+        return res.json({ success: false, msg: "Invalid Username or Password" });
+    }
+});
+
+// Logout API
+app.post('/logout', (req, res) => {
+    isOccupied = false; // Free the seat
+    res.json({ success: true });
+});
+
+// Email Send API
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
-    // Validation
     if (!gmail || !apppass || !to) {
         return res.json({ success: false, msg: "Please fill all required fields." });
     }
 
-    // Prepare recipients list (comma ya new line se split karo)
     const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
 
-    // Nodemailer Transporter Setup
+    // Limit Check
+    if (recipients.length > 25) {
+        return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
+    }
+
     const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: gmail,
-            pass: apppass
-        }
+        auth: { user: gmail, pass: apppass }
     });
 
     const mailOptions = {
@@ -46,16 +64,13 @@ app.post('/send', async (req, res) => {
     };
 
     try {
-        const info = await transporter.sendMail(mailOptions);
-        console.log('Email sent: ' + info.response);
+        await transporter.sendMail(mailOptions);
         res.json({ success: true, sent: recipients.length });
     } catch (error) {
-        console.error(error);
         res.json({ success: false, msg: error.message });
     }
 });
 
-// Server Start
 app.listen(port, () => {
     console.log(`Server running on port ${port}`);
 });
