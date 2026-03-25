@@ -22,16 +22,27 @@
 </div>
 
 <script>
-  function doLogin() {
+  async function doLogin() {
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
 
-    // Yahan Username aur Password check hoga
-    if (user === "gaurav" && pass === "kakwan") {
-      sessionStorage.setItem("auth", user);
-      window.location.href = "/index.html";
-    } else {
-      alert("Invalid Username or Password!");
+    try {
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: user, password: pass })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        sessionStorage.setItem("auth", "active");
+        window.location.href = "/index.html";
+      } else {
+        alert(data.msg); // Shows "User Limit Reached" or "Invalid"
+      }
+    } catch (e) {
+      alert("Connection Error");
     }
   }
 </script>
