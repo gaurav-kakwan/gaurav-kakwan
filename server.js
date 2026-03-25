@@ -32,7 +32,7 @@ app.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// Email Send API
+// Email Send API with Better Configuration
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -46,24 +46,38 @@ app.post('/send', async (req, res) => {
         return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
     }
 
+    // UPDATED: Explicit SMTP Settings for Gmail (More Reliable)
     const transporter = nodemailer.createTransport({
-        service: 'gmail',
-        auth: { user: gmail, pass: apppass }
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // use SSL
+        auth: {
+            user: gmail,
+            pass: apppass
+        },
+        connectionTimeout: 10000, // 10 seconds timeout
+        socketTimeout: 10000
     });
 
     const mailOptions = {
         from: `"${senderName}" <${gmail}>`,
-        to: recipients,
+        to: recipients, // Email 'Recipients' box walo ko jayegi
         subject: subject,
         text: message
     };
 
     try {
-        await transporter.sendMail(mailOptions);
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email sent: ' + info.response);
         res.json({ success: true, sent: recipients.length });
     } catch (error) {
-        console.error(error);
-        res.json({ success: false, msg: error.message });
+        console.error("Full Error:", error);
+        // User friendly message
+        let errorMsg = error.message;
+        if(error.code === 'ESOCKET') errorMsg = "Connection failed. Hosting might block SMTP ports.";
+        if(error.code === 'EAUTH') errorMsg = "Invalid Gmail or App Password.";
+        
+        res.json({ success: false, msg: errorMsg });
     }
 });
 
