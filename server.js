@@ -1,9 +1,6 @@
-const express = require('express');
-const nodemailer = require('nodemailer');
-const path = require('path');
-const dns = require("dns");
-
-dns.setServers(["8.8.8.8","8.8.4.4"]);
+const express = require("express");
+const nodemailer = require("nodemailer");
+const path = require("path");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -13,101 +10,98 @@ app.use(express.static(__dirname));
 
 let isOccupied = false;
 
-app.get('/', (req,res)=>{
-res.sendFile(path.join(__dirname,'login.html'));
+// Login page
+app.get("/", (req,res)=>{
+  res.sendFile(path.join(__dirname,"login.html"));
 });
 
-app.post('/login',(req,res)=>{
+// Login
+app.post("/login",(req,res)=>{
 
-const {username,password}=req.body;
+  const {username,password} = req.body;
 
-if(username==="gaurav" && password==="kakwan"){
+  if(username==="gaurav" && password==="kakwan"){
 
-if(isOccupied){
-return res.json({success:false,msg:"User Limit Reached"});
-}
+    if(isOccupied){
+      return res.json({success:false,msg:"User Limit Reached"});
+    }
 
-isOccupied=true;
-return res.json({success:true});
+    isOccupied=true;
+    return res.json({success:true});
+  }
 
-}
-
-return res.json({success:false,msg:"Invalid Login"});
+  res.json({success:false,msg:"Invalid Login"});
 });
 
-app.post('/logout',(req,res)=>{
-isOccupied=false;
-res.json({success:true});
+// Logout
+app.post("/logout",(req,res)=>{
+  isOccupied=false;
+  res.json({success:true});
 });
 
-app.post('/send', async (req,res)=>{
+// Send mail
+app.post("/send", async (req,res)=>{
 
-const {senderName,gmail,apppass,subject,message,to} = req.body;
+  const {senderName,gmail,apppass,subject,message,to} = req.body;
 
-if(!gmail || !apppass || !to){
-return res.json({success:false,msg:"Missing fields"});
-}
+  if(!gmail || !apppass || !to){
+    return res.json({success:false,msg:"Missing fields"});
+  }
 
-const recipients = to
-.split(/[\n,]/)
-.map(e=>e.trim())
-.filter(e=>e);
+  const recipients = to
+  .split(/[\n,]/)
+  .map(e=>e.trim())
+  .filter(e=>e);
 
-if(recipients.length > 25){
-return res.json({success:false,msg:"Max 25 recipients allowed"});
-}
+  if(recipients.length > 25){
+    return res.json({success:false,msg:"Max 25 recipients allowed"});
+  }
 
-try{
+  try{
 
-const transporter = nodemailer.createTransport({
+    const transporter = nodemailer.createTransport({
 
-host:"smtp.gmail.com",
-port:587,
-secure:false,
-requireTLS:true,
+      service:"gmail",
 
-auth:{
-user:gmail,
-pass:apppass
-},
+      auth:{
+        user:gmail,
+        pass:apppass
+      }
 
-connectionTimeout:30000,
-greetingTimeout:30000,
-socketTimeout:30000
+    });
 
-});
+    let sent = 0;
 
-let sent=0;
+    for(const email of recipients){
 
-for(const email of recipients){
+      await transporter.sendMail({
 
-await transporter.sendMail({
+        from:`"${senderName}" <${gmail}>`,
+        to:email,
+        subject:subject,
+        text:message
 
-from:`"${senderName}" <${gmail}>`,
-to:email,
-subject:subject,
-text:message
+      });
 
-});
+      sent++;
 
-sent++;
+      await new Promise(r=>setTimeout(r,2000));
+    }
 
-await new Promise(r=>setTimeout(r,2000));
+    res.json({success:true,sent:sent});
 
-}
+  }catch(err){
 
-res.json({success:true,sent:sent});
+    console.log(err);
 
-}catch(error){
-
-console.log("MAIL ERROR:",error);
-
-res.json({success:false,msg:error.message});
-
-}
+    res.json({
+      success:false,
+      msg:"Email send failed"
+    });
+  }
 
 });
 
 app.listen(port,()=>{
-console.log("Server running on port "+port);
+  console.log("Server running on port "+port);
 });
