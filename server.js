@@ -10,12 +10,10 @@ app.use(express.static(__dirname));
 
 let isOccupied = false;
 
-// Login page
 app.get("/", (req,res)=>{
   res.sendFile(path.join(__dirname,"login.html"));
 });
 
-// Login
 app.post("/login",(req,res)=>{
 
   const {username,password} = req.body;
@@ -33,13 +31,11 @@ app.post("/login",(req,res)=>{
   res.json({success:false,msg:"Invalid Login"});
 });
 
-// Logout
 app.post("/logout",(req,res)=>{
   isOccupied=false;
   res.json({success:true});
 });
 
-// Send mail
 app.post("/send", async (req,res)=>{
 
   const {senderName,gmail,apppass,subject,message,to} = req.body;
@@ -59,16 +55,17 @@ app.post("/send", async (req,res)=>{
 
   try{
 
+    // transporter create once
     const transporter = nodemailer.createTransport({
-
       service:"gmail",
-
       auth:{
         user:gmail,
         pass:apppass
       }
-
     });
+
+    // verify SMTP connection
+    await transporter.verify();
 
     let sent = 0;
 
@@ -85,18 +82,18 @@ app.post("/send", async (req,res)=>{
 
       sent++;
 
-      await new Promise(r=>setTimeout(r,2000));
+      await new Promise(r=>setTimeout(r,1500));
     }
 
     res.json({success:true,sent:sent});
 
   }catch(err){
 
-    console.log(err);
+    console.log("MAIL ERROR:",err);
 
     res.json({
       success:false,
-      msg:"Email send failed"
+      msg:err.message
     });
   }
 
