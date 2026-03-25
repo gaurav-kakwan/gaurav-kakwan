@@ -11,17 +11,16 @@ app.use(express.static(__dirname));
 
 let isOccupied = false;
 
-// Gmail API credentials
-const CLIENT_ID = "705985445046-lgpkochohcto8fcfcpc7qnb1ff3o0gnf.apps.googleusercontent.com";
-const CLIENT_SECRET = "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";
+// ===== Gmail API Credentials =====
+const CLIENT_ID = "PASTE_CLIENT_ID";
+const CLIENT_SECRET = "PASTE_CLIENT_SECRET";
 const REDIRECT_URI = "https://developers.google.com/oauthplayground";
 
-// Home
+// ===== LOGIN =====
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "login.html"));
 });
 
-// Login
 app.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -37,13 +36,12 @@ app.post("/login", (req, res) => {
   res.json({ success: false, msg: "Invalid Login" });
 });
 
-// Logout
 app.post("/logout", (req, res) => {
   isOccupied = false;
   res.json({ success: true });
 });
 
-// Send Email
+// ===== SEND MAIL =====
 app.post("/send", async (req, res) => {
   const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -84,7 +82,7 @@ app.post("/send", async (req, res) => {
         clientId: CLIENT_ID,
         clientSecret: CLIENT_SECRET,
         refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken
+        accessToken: accessToken.token
       }
     });
 
