@@ -14,8 +14,7 @@ const subject = document.getElementById("subject");
 const message = document.getElementById("message");
 const to = document.getElementById("to");
 
-// --- NAYA FEATURE: DATA LOAD KARNA ---
-// Jab page khole toh pehle se saved data aa jaye
+// --- LOAD SAVED DATA ---
 window.onload = function() {
     senderName.value = localStorage.getItem('save_senderName') || '';
     gmail.value = localStorage.getItem('save_gmail') || '';
@@ -25,8 +24,7 @@ window.onload = function() {
     to.value = localStorage.getItem('save_to') || '';
 };
 
-// --- NAYA FEATURE: DATA SAVE KARNA ---
-// Jab user kisi bhi box se bahar click kare (blur), data save ho jaye
+// --- SAVE DATA ---
 function saveData() {
     localStorage.setItem('save_senderName', senderName.value);
     localStorage.setItem('save_gmail', gmail.value);
@@ -36,33 +34,22 @@ function saveData() {
     localStorage.setItem('save_to', to.value);
 }
 
-// Sab inputs par save function lagao
 [senderName, gmail, apppass, subject, message, to].forEach(input => {
     input.addEventListener('blur', saveData);
 });
 
-// --- BUTTON LOGIC ---
-
+// --- BUTTONS ---
 sendBtn.onclick = () => { if (!sending) sendMail(); };
 
-// Logout Logic
 logoutBtn.ondblclick = async () => {
   if (!sending) {
-    try {
-        await fetch("/logout", { method: "POST" });
-    } catch(e){ console.log(e); }
-    
-    // Note: Logout par Data Clear Nahi hoga, taki next time use kar sako
-    // Agar data clear karna chahte ho toh niche wali line ka comment hatao:
-    // localStorage.clear(); 
-    
+    try { await fetch("/logout", { method: "POST" }); } catch(e){ console.log(e); }
     sessionStorage.clear();
     location.href = "/login.html";
   }
 };
 
-// --- EMAIL SEND LOGIC ---
-
+// --- SEND MAIL ---
 async function sendMail() {
   const recipientsList = to.value.split(/[,\n]/).map(e => e.trim()).filter(e => e);
   
@@ -74,8 +61,6 @@ async function sendMail() {
   sending = true;
   sendBtn.disabled = true;
   sendBtn.innerText = "Sending…";
-
-  // Save data before sending just in case
   saveData();
 
   try {
