@@ -7,6 +7,7 @@
 <body>
 
 <div class="login-page">
+  <!-- Yahan "login-card" class use hoga, "card" nahi -->
   <div class="login-card">
     <h2 class="login-title">Secure Access</h2>
 
@@ -39,7 +40,7 @@
         sessionStorage.setItem("auth", "active");
         window.location.href = "/index.html";
       } else {
-        alert(data.msg); // Shows "User Limit Reached" or "Invalid"
+        alert(data.msg);
       }
     } catch (e) {
       alert("Connection Error");
