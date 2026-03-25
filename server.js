@@ -14,25 +14,21 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-// Login API
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-
-    // Check credentials
     if (username === "gaurav" && password === "kakwan") {
         if (isOccupied) {
             return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
         }
-        isOccupied = true; // Lock the seat
+        isOccupied = true;
         return res.json({ success: true });
     } else {
         return res.json({ success: false, msg: "Invalid Username or Password" });
     }
 });
 
-// Logout API
 app.post('/logout', (req, res) => {
-    isOccupied = false; // Free the seat
+    isOccupied = false;
     res.json({ success: true });
 });
 
@@ -46,7 +42,6 @@ app.post('/send', async (req, res) => {
 
     const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
 
-    // Limit Check
     if (recipients.length > 25) {
         return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
     }
@@ -67,6 +62,7 @@ app.post('/send', async (req, res) => {
         await transporter.sendMail(mailOptions);
         res.json({ success: true, sent: recipients.length });
     } catch (error) {
+        console.error(error);
         res.json({ success: false, msg: error.message });
     }
 });
