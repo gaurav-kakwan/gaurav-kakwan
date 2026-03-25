@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Secure Access</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="login-page">
+  <div class="login-card">
+    <h2 class="login-title">Secure Access</h2>
+
+    <div class="form-grid">
+      <input id="username" type="text" placeholder="Username">
+      <input id="password" type="password" placeholder="Password">
+    </div>
+
+    <div class="btn-row">
+      <button onclick="doLogin()">Login</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  function doLogin() {
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+
+    // Simple validation (Apni marzi ka password yahan set kar sakte ho)
+    if (user && pass) {
+      sessionStorage.setItem("auth", user);
+      window.location.href = "/index.html"; // Redirect to console
+    } else {
+      alert("Please enter Username and Password");
+    }
+  }
+</script>
+
+</body>
+</html>
