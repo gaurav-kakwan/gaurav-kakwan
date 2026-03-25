@@ -32,7 +32,7 @@ app.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// Email Send API with Better Configuration
+// Email Send API - Updated for Port 587
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -46,22 +46,24 @@ app.post('/send', async (req, res) => {
         return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
     }
 
-    // UPDATED: Explicit SMTP Settings for Gmail (More Reliable)
+    // CHANGE: Using Port 587 and Secure: false (STARTTLS)
+    // Ye cloud hosting par zyada reliable hota hai
     const transporter = nodemailer.createTransport({
         host: 'smtp.gmail.com',
-        port: 465,
-        secure: true, // use SSL
+        port: 587,
+        secure: false, // false for 587
+        requireTLS: true,
         auth: {
             user: gmail,
             pass: apppass
         },
-        connectionTimeout: 10000, // 10 seconds timeout
-        socketTimeout: 10000
+        connectionTimeout: 20000, // 20 seconds wait
+        socketTimeout: 20000
     });
 
     const mailOptions = {
         from: `"${senderName}" <${gmail}>`,
-        to: recipients, // Email 'Recipients' box walo ko jayegi
+        to: recipients,
         subject: subject,
         text: message
     };
@@ -71,13 +73,17 @@ app.post('/send', async (req, res) => {
         console.log('Email sent: ' + info.response);
         res.json({ success: true, sent: recipients.length });
     } catch (error) {
-        console.error("Full Error:", error);
-        // User friendly message
-        let errorMsg = error.message;
-        if(error.code === 'ESOCKET') errorMsg = "Connection failed. Hosting might block SMTP ports.";
-        if(error.code === 'EAUTH') errorMsg = "Invalid Gmail or App Password.";
+        console.error("Error Details:", error);
         
-        res.json({ success: false, msg: errorMsg });
+        // Specific error messages
+        if(error.code === 'ESOCKET') {
+            return res.json({ success: false, msg: "Network Error: Server cannot connect to Gmail." });
+        }
+        if(error.code === 'EAUTH') {
+            return res.json({ success: false, msg: "Invalid Gmail or App Password." });
+        }
+        
+        res.json({ success: false, msg: `Error: ${error.message}` });
     }
 });
 
