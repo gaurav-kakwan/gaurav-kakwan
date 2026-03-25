@@ -12,8 +12,8 @@ app.use(express.static(__dirname));
 let isOccupied = false;
 
 // ===== Gmail API Credentials =====
-const CLIENT_ID = "PASTE_CLIENT_ID";
-const CLIENT_SECRET = "PASTE_CLIENT_SECRET";
+const CLIENT_ID = "705985445046-lgpkochohcto8fcfcpc7qnb1ff3o0gnf.apps.googleusercontent.com";
+const CLIENT_SECRET = "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";
 const REDIRECT_URI = "https://developers.google.com/oauthplayground";
 
 // ===== LOGIN =====
