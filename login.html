@@ -26,12 +26,12 @@
     const user = document.getElementById('username').value;
     const pass = document.getElementById('password').value;
 
-    // Simple validation (Apni marzi ka password yahan set kar sakte ho)
-    if (user && pass) {
+    // Yahan Username aur Password check hoga
+    if (user === "gaurav" && pass === "kakwan") {
       sessionStorage.setItem("auth", user);
-      window.location.href = "/index.html"; // Redirect to console
+      window.location.href = "/index.html";
     } else {
-      alert("Please enter Username and Password");
+      alert("Invalid Username or Password!");
     }
   }
 </script>
