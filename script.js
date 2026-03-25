@@ -14,59 +14,70 @@ const subject = document.getElementById("subject");
 const message = document.getElementById("message");
 const to = document.getElementById("to");
 
-// --- LOAD SAVED DATA ---
-window.onload = function() {
-    senderName.value = localStorage.getItem('save_senderName') || '';
-    gmail.value = localStorage.getItem('save_gmail') || '';
-    apppass.value = localStorage.getItem('save_apppass') || '';
-    subject.value = localStorage.getItem('save_subject') || '';
-    message.value = localStorage.getItem('save_message') || '';
-    to.value = localStorage.getItem('save_to') || '';
+// Load saved data
+window.onload = () => {
+  senderName.value = localStorage.getItem("save_senderName") || "";
+  gmail.value = localStorage.getItem("save_gmail") || "";
+  apppass.value = localStorage.getItem("save_apppass") || "";
+  subject.value = localStorage.getItem("save_subject") || "";
+  message.value = localStorage.getItem("save_message") || "";
+  to.value = localStorage.getItem("save_to") || "";
 };
 
-// --- SAVE DATA ---
+// Save data
 function saveData() {
-    localStorage.setItem('save_senderName', senderName.value);
-    localStorage.setItem('save_gmail', gmail.value);
-    localStorage.setItem('save_apppass', apppass.value);
-    localStorage.setItem('save_subject', subject.value);
-    localStorage.setItem('save_message', message.value);
-    localStorage.setItem('save_to', to.value);
+  localStorage.setItem("save_senderName", senderName.value);
+  localStorage.setItem("save_gmail", gmail.value);
+  localStorage.setItem("save_apppass", apppass.value);
+  localStorage.setItem("save_subject", subject.value);
+  localStorage.setItem("save_message", message.value);
+  localStorage.setItem("save_to", to.value);
 }
 
-[senderName, gmail, apppass, subject, message, to].forEach(input => {
-    input.addEventListener('blur', saveData);
-});
+[senderName, gmail, apppass, subject, message, to].forEach(el =>
+  el.addEventListener("blur", saveData)
+);
 
-// --- BUTTONS ---
-sendBtn.onclick = () => { if (!sending) sendMail(); };
+// Buttons
+sendBtn.onclick = () => {
+  if (!sending) sendMail();
+};
 
 logoutBtn.ondblclick = async () => {
   if (!sending) {
-    try { await fetch("/logout", { method: "POST" }); } catch(e){ console.log(e); }
+    try {
+      await fetch("/logout", { method: "POST" });
+    } catch {}
     sessionStorage.clear();
     location.href = "/login.html";
   }
 };
 
-// --- SEND MAIL ---
+// Send mail
 async function sendMail() {
-  const recipientsList = to.value.split(/[,\n]/).map(e => e.trim()).filter(e => e);
-  
-  if (recipientsList.length > 25) {
-    alert("Error: Maximum 25 recipients allowed.");
+
+  const recipients = to.value
+    .split(/[\n,]/)
+    .map(e => e.trim())
+    .filter(e => e);
+
+  if (recipients.length > 25) {
+    alert("Maximum 25 emails allowed");
     return;
   }
 
   sending = true;
   sendBtn.disabled = true;
-  sendBtn.innerText = "Sending…";
+  sendBtn.innerText = "Sending...";
   saveData();
 
   try {
+
     const res = await fetch("/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         senderName: senderName.value.trim(),
         gmail: gmail.value.trim(),
@@ -80,17 +91,16 @@ async function sendMail() {
     const data = await res.json();
 
     if (!data.success) {
-      alert(data.msg || "Sending failed ❌");
-      return;
+      alert(data.msg || "Sending failed");
+    } else {
+      alert(`Success\nEmails Sent: ${data.sent}`);
     }
 
-    alert(`Success ✅\nEmails Sent: ${data.sent}`);
-
   } catch (err) {
-    alert("Server error ❌");
-  } finally {
-    sending = false;
-    sendBtn.disabled = false;
-    sendBtn.innerText = "Send All";
+    alert("Server connection error");
   }
+
+  sending = false;
+  sendBtn.disabled = false;
+  sendBtn.innerText = "Send All";
 }
