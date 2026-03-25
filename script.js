@@ -1,4 +1,4 @@
-// Security Check: Agar login nahi hai to wapas bhejo
+// Security Check
 if (!sessionStorage.getItem("auth")) {
   location.href = "/login.html";
 }
@@ -14,10 +14,8 @@ const subject = document.getElementById("subject");
 const message = document.getElementById("message");
 const to = document.getElementById("to");
 
-// Send Button Logic
 sendBtn.onclick = () => { if (!sending) sendMail(); };
 
-// Logout Button Logic (Double Click)
 logoutBtn.ondblclick = () => {
   if (!sending) {
     sessionStorage.clear();
@@ -26,6 +24,14 @@ logoutBtn.ondblclick = () => {
 };
 
 async function sendMail() {
+  // 25 Email Limit Check
+  const recipientsList = to.value.split(/[,\n]/).map(e => e.trim()).filter(e => e);
+  
+  if (recipientsList.length > 25) {
+    alert("Error: You can only send to 25 recipients at a time (Gmail Limit).");
+    return;
+  }
+
   sending = true;
   sendBtn.disabled = true;
   sendBtn.innerText = "Sending…";
