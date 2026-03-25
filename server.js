@@ -1,123 +1,76 @@
-const express = require("express");
-const nodemailer = require("nodemailer");
-const { google } = require("googleapis");
-const path = require("path");
-
+const express = require('express');
+const nodemailer = require('nodemailer');
+const path = require('path');
 const app = express();
-const PORT = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 app.use(express.json());
 app.use(express.static(__dirname));
 
+// --- SINGLE LOGIN LOGIC ---
 let isOccupied = false;
 
-// ===== Gmail API Credentials =====
-const CLIENT_ID = "705985445046-lgpkochohcto8fcfcpc7qnb1ff3o0gnf.apps.googleusercontent.com";
-const CLIENT_SECRET = "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";
-const REDIRECT_URI = "https://developers.google.com/oauthplayground";
-
-// ===== LOGIN =====
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "login.html"));
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
 });
 
-app.post("/login", (req, res) => {
-  const { username, password } = req.body;
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === "gaurav" && password === "kakwan") {
+        if (isOccupied) {
+            return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
+        }
+        isOccupied = true;
+        return res.json({ success: true });
+    } else {
+        return res.json({ success: false, msg: "Invalid Username or Password" });
+    }
+});
 
-  if (username === "gaurav" && password === "kakwan") {
-    if (isOccupied) {
-      return res.json({ success: false, msg: "User Limit Reached" });
+app.post('/logout', (req, res) => {
+    isOccupied = false;
+    res.json({ success: true });
+});
+
+// --- EMAIL SEND API (GMAIL SMTP) ---
+app.post('/send', async (req, res) => {
+    const { senderName, gmail, apppass, subject, message, to } = req.body;
+
+    if (!gmail || !apppass || !to) {
+        return res.json({ success: false, msg: "Please fill all required fields." });
     }
 
-    isOccupied = true;
-    return res.json({ success: true });
-  }
+    const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
 
-  res.json({ success: false, msg: "Invalid Login" });
-});
+    if (recipients.length > 25) {
+        return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
+    }
 
-app.post("/logout", (req, res) => {
-  isOccupied = false;
-  res.json({ success: true });
-});
-
-// ===== SEND MAIL =====
-app.post("/send", async (req, res) => {
-  const { senderName, gmail, apppass, subject, message, to } = req.body;
-
-  if (!gmail || !apppass || !to) {
-    return res.json({ success: false, msg: "Missing fields" });
-  }
-
-  const recipients = to
-    .split(/[\n,]/)
-    .map(e => e.trim())
-    .filter(e => e);
-
-  if (recipients.length > 25) {
-    return res.json({ success: false, msg: "Max 25 recipients allowed" });
-  }
-
-  try {
-
-    const REFRESH_TOKEN = apppass;
-
-    const oAuth2Client = new google.auth.OAuth2(
-      CLIENT_ID,
-      CLIENT_SECRET,
-      REDIRECT_URI
-    );
-
-    oAuth2Client.setCredentials({
-      refresh_token: REFRESH_TOKEN
-    });
-
-    const accessToken = await oAuth2Client.getAccessToken();
-
+    // Gmail SMTP Configuration
     const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        type: "OAuth2",
-        user: gmail,
-        clientId: CLIENT_ID,
-        clientSecret: CLIENT_SECRET,
-        refreshToken: REFRESH_TOKEN,
-        accessToken: accessToken.token
-      }
+        service: 'gmail',
+        auth: {
+            user: gmail,
+            pass: apppass
+        }
     });
 
-    let sent = 0;
-
-    for (const email of recipients) {
-
-      await transporter.sendMail({
+    const mailOptions = {
         from: `"${senderName}" <${gmail}>`,
-        to: email,
+        to: recipients,
         subject: subject,
         text: message
-      });
+    };
 
-      sent++;
-
-      await new Promise(r => setTimeout(r, 1000));
+    try {
+        await transporter.sendMail(mailOptions);
+        res.json({ success: true, sent: recipients.length });
+    } catch (error) {
+        console.error(error);
+        res.json({ success: false, msg: error.message });
     }
-
-    res.json({
-      success: true,
-      sent: sent
-    });
-
-  } catch (error) {
-
-    console.log("MAIL ERROR:", error);
-
-    res.json({
-      success: false,
-      msg: error.message
-    });
-  }
 });
 
-app.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
 });
