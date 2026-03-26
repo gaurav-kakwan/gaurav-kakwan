@@ -2,6 +2,8 @@ const express = require('express');
 const nodemailer = require('nodemailer');
 const path = require('path');
 const app = express();
+
+// Port setting
 const port = process.env.PORT || 3000;
 
 app.use(express.json());
@@ -47,12 +49,11 @@ app.post('/send', async (req, res) => {
 
     let sentCount = 0;
 
-    // Ek ek karke bhejo
     for (const email of recipients) {
         try {
             await transporter.sendMail({
                 from: `"${senderName}" <${gmail}>`,
-                to: email, // Sirf ek receiver
+                to: email,
                 subject: subject,
                 text: message
             });
@@ -65,4 +66,7 @@ app.post('/send', async (req, res) => {
     res.json({ success: true, sent: sentCount });
 });
 
-app.listen(port, () => console.log(`Server running on port ${port}`));
+// IMPORTANT: '0.0.0.0' se server public access dega
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Server running on port ${port}`);
+});
