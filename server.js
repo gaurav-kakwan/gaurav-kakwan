@@ -17,14 +17,11 @@ app.get('/', (req, res) => {
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (username === "gaurav" && password === "kakwan") {
-        if (isOccupied) {
-            return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
-        }
+        if (isOccupied) return res.json({ success: false, msg: "User Limit Reached!" });
         isOccupied = true;
         return res.json({ success: true });
-    } else {
-        return res.json({ success: false, msg: "Invalid Username or Password" });
     }
+    return res.json({ success: false, msg: "Invalid Credentials" });
 });
 
 app.post('/logout', (req, res) => {
@@ -32,7 +29,7 @@ app.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// --- EMAIL SEND API (GMAIL SMTP) ---
+// --- EMAIL SEND API (INDIVIDUAL) ---
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -41,36 +38,31 @@ app.post('/send', async (req, res) => {
     }
 
     const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
+    if (recipients.length > 25) return res.json({ success: false, msg: "Limit: Max 25 emails." });
 
-    if (recipients.length > 25) {
-        return res.json({ success: false, msg: "Limit Error: Max 25 recipients allowed." });
-    }
-
-    // Gmail SMTP Configuration
     const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: gmail,
-            pass: apppass
-        }
+        auth: { user: gmail, pass: apppass }
     });
 
-    const mailOptions = {
-        from: `"${senderName}" <${gmail}>`,
-        to: recipients,
-        subject: subject,
-        text: message
-    };
+    let sentCount = 0;
 
-    try {
-        await transporter.sendMail(mailOptions);
-        res.json({ success: true, sent: recipients.length });
-    } catch (error) {
-        console.error(error);
-        res.json({ success: false, msg: error.message });
+    // Ek ek karke bhejo
+    for (const email of recipients) {
+        try {
+            await transporter.sendMail({
+                from: `"${senderName}" <${gmail}>`,
+                to: email, // Sirf ek receiver
+                subject: subject,
+                text: message
+            });
+            sentCount++;
+        } catch (e) {
+            console.log("Error sending to: " + email);
+        }
     }
+
+    res.json({ success: true, sent: sentCount });
 });
 
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+app.listen(port, () => console.log(`Server running on port ${port}`));
