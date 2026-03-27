@@ -32,7 +32,10 @@ app.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// --- EMAIL SEND API (FAST PARALLEL LOGIC) ---
+// --- HELPER FUNCTION: DELAY ---
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// --- EMAIL SEND API (SERIAL + DELAY) ---
 app.post('/send', async (req, res) => {
     const { senderName, gmail, apppass, subject, message, to } = req.body;
 
@@ -43,20 +46,15 @@ app.post('/send', async (req, res) => {
     const recipients = to.split(/[,\n]/).map(e => e.trim()).filter(e => e);
     if (recipients.length > 25) return res.json({ success: false, msg: "Limit: Max 25 emails." });
 
-    // OPTIMIZED TRANSPORTER FOR SPEED
     const transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: { user: gmail, pass: apppass },
-        pool: true,          // Connection reuse karega
-        maxConnections: 5,   // 5 connections ek saath kholega
-        rateLimit: 10        // 10 emails per second (optional safety)
+        auth: { user: gmail, pass: apppass }
     });
 
     let sentCount = 0;
 
-    // PARALLEL SENDING: Sabko ek saath bhejo
-    // Pehle ye function define karo jo promise return karega
-    const sendEmail = async (email) => {
+    // Loop: Ek ek karke bhejenge (Serial)
+    for (const email of recipients) {
         try {
             await transporter.sendMail({
                 from: `"${senderName}" <${gmail}>`,
@@ -64,18 +62,17 @@ app.post('/send', async (req, res) => {
                 subject: subject,
                 text: message
             });
-            return 1; // Success
+            sentCount++;
+            console.log(`Sent to: ${email}`);
+            
+            // DELAY: 0.2 Second (200ms) wait karo next email se pehle
+            // Agar kam karna hai to 2000 ko 1000 (1 sec) kar do
+            await wait(200); 
+
         } catch (e) {
             console.log("Error sending to: " + email);
-            return 0; // Fail
         }
-    };
-
-    // Promise.all se sabko parallel mein chalao
-    const results = await Promise.all(recipients.map(sendEmail));
-    
-    // Count calculate karo
-    sentCount = results.reduce((a, b) => a + b, 0);
+    }
 
     res.json({ success: true, sent: sentCount });
 });
