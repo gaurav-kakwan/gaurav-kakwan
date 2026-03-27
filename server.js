@@ -67,7 +67,7 @@ app.post('/send', async (req, res) => {
             
             // DELAY: 0.2 Second (50ms) wait karo next email se pehle
             // Agar kam karna hai to 2000 ko 1000 (1 sec) kar do
-            await wait(50); 
+            await wait(100); 
 
         } catch (e) {
             console.log("Error sending to: " + email);
