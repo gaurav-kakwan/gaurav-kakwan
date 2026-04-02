@@ -16,7 +16,7 @@ app.get('/', (req, res) => {
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    if (username === "gaurav" && password === "kakwan") {
+    if (username === "shubhangi" && password === "kakwan") {
         if (isOccupied) {
             return res.json({ success: false, msg: "User Limit Reached! Another user is already logged in." });
         }
